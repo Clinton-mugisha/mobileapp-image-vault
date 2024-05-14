@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182537378574",
+    "project_id": "application-f84cc",
+    "storage_bucket": "application-f84cc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182537378574:android:e4310681ba539b4b1c155f",
+        "android_client_info": {
+          "package_name": "com.example.myappf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvnrz8C91ABm42VY2hiAm4DtuIiyYsMP8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
