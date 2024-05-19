@@ -3,9 +3,10 @@ plugins {
     // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
-    id "kotlin-android"
+    id "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     id "dev.flutter.flutter-gradle-plugin"
 }
+ext.kotlin_version = '1.9.0'
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
@@ -52,7 +53,7 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        minSdkVersion 20
+        minSdkVersion flutter.minSdkVersion
         multiDexEnabled true
     }
 

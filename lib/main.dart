@@ -1,12 +1,12 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 
 
 void main() async {
@@ -19,8 +19,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Firebase Demo',
+      title: 'upload app',
       theme: ThemeData(
+        brightness: Brightness.dark,
         primarySwatch: Colors.blue,
       ),
       home: SignUpPage(),
@@ -71,7 +72,8 @@ class SignUpPage extends StatelessWidget {
 
                 try {
                   // Check if the user already exists
-                  final existingUser = await _auth.fetchSignInMethodsForEmail(email);
+                  final existingUser =
+                      await _auth.fetchSignInMethodsForEmail(email);
                   if (existingUser.isNotEmpty) {
                     throw 'User already exists. Please log in instead.';
                   }
@@ -118,6 +120,7 @@ class SignUpPage extends StatelessWidget {
     );
   }
 }
+
 class LoginPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
@@ -174,7 +177,9 @@ class LoginPage extends StatelessWidget {
                 } catch (error) {
                   // Display the error message on the screen
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Invalid credentials. Please try again.')),
+                    SnackBar(
+                        content:
+                            Text('Invalid credentials. Please try again.')),
                   );
                 }
               },
@@ -212,7 +217,8 @@ class _HomePageState extends State<HomePage> {
   List<File> images = []; // Store uploaded image files
 
   Future<void> _pickImage() async {
-    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
         images.add(File(pickedImage.path));
@@ -254,7 +260,8 @@ class _HomePageState extends State<HomePage> {
                 child: Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
-                    icon: Icon(Icons.delete, color: Colors.black), // Black delete icon
+                    icon: Icon(Icons.delete,
+                        color: Colors.black), // Black delete icon
                     onPressed: () {
                       _deleteImage(index);
                     },
@@ -302,24 +309,25 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _getLocation() async {
-    try {
-      final position = await Geolocator.getLastKnownPosition();
-      if (position != null) {
-        setState(() {
-          latitude = position.latitude.toString();
-          longitude = position.longitude.toString();
-        });
-      }
-
-      Geolocator.getPositionStream().listen((pos) {
-        setState(() {
-          latitude = pos.latitude.toString();
-          longitude = pos.longitude.toString();
-        });
-      });
-    } catch (e) {
-      print('Error getting location: $e');
+    bool serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled');
     }
+    geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+    if (permission == geo.LocationPermission.denied) {
+      permission = await geo.Geolocator.requestPermission();
+      if (permission == geo.LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == geo.LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied, we cannot request permissions.');
+    }
+    geo.Position position = await geo.Geolocator.getCurrentPosition(desiredAccuracy: geo.LocationAccuracy.high);
+    setState(() {
+      latitude = position.latitude.toString();
+      longitude = position.longitude.toString();
+    });
   }
 
   @override
@@ -334,28 +342,13 @@ class _LocationPageState extends State<LocationPage> {
           children: [
             if (latitude != null && longitude != null)
               Text('Latitude: $latitude\nLongitude: $longitude'),
-            SizedBox(height: 20),
-            if (latitude != null && longitude != null)
-              Container(
-                height: 300,
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: LatLng(double.parse(latitude!), double.parse(longitude!)),
-                    zoom: 15,
-                  ),
-                  onMapCreated: (controller) {
-                    mapController = controller;
-                  },
-                  markers: {
-                    Marker(
-                      markerId: MarkerId('currentLocation'),
-                      position: LatLng(double.parse(latitude!), double.parse(longitude!)),
-                    ),
-                  },
-                ),
-              ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _getLocation,
+        tooltip: 'Get Location',
+        child: Icon(Icons.my_location),
       ),
     );
   }
